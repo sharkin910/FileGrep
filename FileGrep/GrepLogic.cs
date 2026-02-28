@@ -1,10 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FileGrep
 {
-    public static class GrepLogic
+    /// <summary>
+    /// 検索ロジックを提供するインスタンスサービス。
+    /// UIや他のコンシューマーから非同期に呼び出せるように設計しています。
+    /// </summary>
+    public class GrepService
     {
         /// <summary>
         /// ファイルパスが、指定された拡張子のいずれかに一致して、かつ除外されたフォルダを含まないかどうかを判定する。
@@ -18,7 +25,7 @@ namespace FileGrep
         /// ファイルパスが指定された拡張子に一致し、除外されたフォルダーを含まない場合はtrue、それ以外の場合はfalse。
         /// true if the file path matches the specified extensions and does not contain any excluded folders; otherwise, false.
         /// </returns>
-        public static bool IsMatchPath(string filePath, string[] extentions, string[] excludeFolders)
+        public bool IsMatchPath(string filePath, string[] extentions, string[] excludeFolders)
         {
             // 拡張子判定
             bool hit = false;
@@ -64,47 +71,48 @@ namespace FileGrep
         /// <param name="ignoreEmptyLine">true to ignore empty lines.</param>
         /// <param name="ignoreSpaceLine">true to ignore lines containing only whitespace.</param>
         /// <returns>A string containing the matching lines, optionally prefixed with file path and line number.</returns>
-        public static string GrepFile(
+        private string GrepFileInternal(
             string filePath,
-            string searchText,
-            bool include,
-            bool addPath,
-            bool addLineNo,
-            StringComparison comparison,
-            bool ignoreEmptyLine,
-            bool ignoreSpaceLine)
+            SearchOptions options,
+            CancellationToken ct)
         {
-            string lines = "";
+            var sb = new StringBuilder();
             int lineNo = 0;
             foreach (string line in File.ReadLines(filePath))
             {
+                ct.ThrowIfCancellationRequested();
                 lineNo++;
-                if (ignoreEmptyLine && string.IsNullOrEmpty(line)) continue;
-                if (ignoreSpaceLine && string.IsNullOrWhiteSpace(line)) continue;
-                if (line.Contains(searchText, comparison) == include)
+                if (options.IgnoreEmptyLine && string.IsNullOrEmpty(line)) continue;
+                if (options.IgnoreSpaceLine && string.IsNullOrWhiteSpace(line)) continue;
+                if (line.Contains(options.SearchText, options.Comparison) == options.Include)
                 {
-                    if (addPath)
+                    if (options.AddPath)
                     {
-                        if (addLineNo)
+                        if (options.AddLineNo)
                         {
-                            lines += $"\"{filePath}\"({lineNo}):";
+                            sb.Append($"\"{filePath}\"({lineNo}):");
                         }
                         else
                         {
-                            lines += $"\"{filePath}\":";
+                            sb.Append($"\"{filePath}\":");
                         }
                     }
                     else
                     {
-                        if (addLineNo)
+                        if (options.AddLineNo)
                         {
-                            lines += $"({lineNo}):";
+                            sb.Append($"({lineNo}):");
                         }
                     }
-                    lines += line + Environment.NewLine;
+                    sb.Append(line).Append(Environment.NewLine);
                 }
             }
-            return lines;
+            return sb.ToString();
+        }
+
+        public Task<string> GrepFileAsync(string filePath, SearchOptions options, CancellationToken ct)
+        {
+            return Task.Run(() => GrepFileInternal(filePath, options, ct), ct);
         }
 
         /// <summary>
@@ -123,31 +131,28 @@ namespace FileGrep
         /// <param name="ignoreEmptyLine">true to ignore empty lines; otherwise, false.</param>
         /// <param name="ignoreSpaceLine">true to ignore lines containing only whitespace; otherwise, false.</param>
         /// <returns>An enumerable collection of strings containing the search results.</returns>
-        public static IEnumerable<string> GrepFiles(
+        public async Task GrepFilesAsync(
             string path,
-            string[] extentions,
-            string[] excludeFolders,
-            bool recursively,
-            string searchText,
-            bool include,
-            bool addPath,
-            bool addLineNo,
-            StringComparison comparison,
-            bool ignoreEmptyLine,
-            bool ignoreSpaceLine)
+            SearchOptions options,
+            IProgress<string>? progress,
+            CancellationToken ct)
         {
-            var searchOpt = recursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-            foreach (var file in Directory.EnumerateFiles(path, "*.*", searchOpt))
+            await Task.Run(() =>
             {
-                if (IsMatchPath(file, extentions, excludeFolders))
+                var searchOpt = options.Recursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                foreach (var file in Directory.EnumerateFiles(path, "*.*", searchOpt))
                 {
-                    var log = GrepFile(file, searchText, include, addPath, addLineNo, comparison, ignoreEmptyLine, ignoreSpaceLine);
-                    if (log.Length > 0)
+                    ct.ThrowIfCancellationRequested();
+                    if (IsMatchPath(file, options.Extensions, options.ExcludeFolders))
                     {
-                        yield return log;
+                        var log = GrepFileInternal(file, options, ct);
+                        if (!string.IsNullOrEmpty(log))
+                        {
+                            progress?.Report(log);
+                        }
                     }
                 }
-            }
+            }, ct).ConfigureAwait(false);
         }
     }
 }

@@ -32,6 +32,7 @@
             textBoxPath = new TextBox();
             buttonBrowseFolder = new Button();
             buttonBrowseFile = new Button();
+            buttonCancel = new Button();
             textBoxLog = new TextBox();
             buttonProcess = new Button();
             checkBoxNotInclude = new CheckBox();
@@ -47,6 +48,7 @@
             textBoxExcludeFolders = new TextBox();
             checkBoxAddPathName = new CheckBox();
             checkBoxAddLineNo = new CheckBox();
+            label2 = new Label();
             SuspendLayout();
             // 
             // labelPath
@@ -55,9 +57,9 @@
             labelPath.Location = new Point(15, 16);
             labelPath.Margin = new Padding(4, 0, 4, 0);
             labelPath.Name = "labelPath";
-            labelPath.Size = new Size(109, 15);
+            labelPath.Size = new Size(74, 15);
             labelPath.TabIndex = 0;
-            labelPath.Text = "ファイル・フォルダーパス";
+            labelPath.Text = "検索対象パス";
             // 
             // textBoxPath
             // 
@@ -95,20 +97,31 @@
             buttonBrowseFile.UseVisualStyleBackColor = true;
             buttonBrowseFile.Click += buttonBrowseFile_Click;
             // 
+            // buttonCancel
+            // 
+            buttonCancel.Location = new Point(113, 134);
+            buttonCancel.Margin = new Padding(4);
+            buttonCancel.Name = "buttonCancel";
+            buttonCancel.Size = new Size(88, 29);
+            buttonCancel.TabIndex = 6;
+            buttonCancel.Text = "キャンセル";
+            buttonCancel.UseVisualStyleBackColor = true;
+            buttonCancel.Click += buttonCancel_Click;
+            // 
             // textBoxLog
             // 
             textBoxLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            textBoxLog.Location = new Point(6, 143);
+            textBoxLog.Location = new Point(6, 171);
             textBoxLog.Margin = new Padding(4);
             textBoxLog.Multiline = true;
             textBoxLog.Name = "textBoxLog";
             textBoxLog.ScrollBars = ScrollBars.Both;
-            textBoxLog.Size = new Size(913, 415);
+            textBoxLog.Size = new Size(913, 387);
             textBoxLog.TabIndex = 4;
             // 
             // buttonProcess
             // 
-            buttonProcess.Location = new Point(18, 104);
+            buttonProcess.Location = new Point(15, 134);
             buttonProcess.Margin = new Padding(4);
             buttonProcess.Name = "buttonProcess";
             buttonProcess.Size = new Size(88, 29);
@@ -244,11 +257,21 @@
             checkBoxAddLineNo.Text = "行番号を付与";
             checkBoxAddLineNo.UseVisualStyleBackColor = true;
             // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(15, 111);
+            label2.Name = "label2";
+            label2.Size = new Size(55, 15);
+            label2.TabIndex = 19;
+            label2.Text = "出力書式";
+            // 
             // FormMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(924, 561);
+            Controls.Add(label2);
             Controls.Add(checkBoxAddLineNo);
             Controls.Add(checkBoxAddPathName);
             Controls.Add(textBoxExcludeFolders);
@@ -263,6 +286,7 @@
             Controls.Add(label1);
             Controls.Add(checkBoxNotInclude);
             Controls.Add(buttonProcess);
+            Controls.Add(buttonCancel);
             Controls.Add(textBoxLog);
             Controls.Add(buttonBrowseFile);
             Controls.Add(buttonBrowseFolder);
@@ -281,6 +305,7 @@
         private System.Windows.Forms.Label labelPath;
         private System.Windows.Forms.TextBox textBoxPath;
         private System.Windows.Forms.Button buttonBrowseFolder;
+        private System.Windows.Forms.Button buttonCancel;
         private System.Windows.Forms.Button buttonBrowseFile;
         private System.Windows.Forms.TextBox textBoxLog;
         private System.Windows.Forms.Button buttonProcess;
@@ -297,6 +322,7 @@
         private TextBox textBoxExcludeFolders;
         private CheckBox checkBoxAddPathName;
         private CheckBox checkBoxAddLineNo;
+        private Label label2;
     }
 }
 

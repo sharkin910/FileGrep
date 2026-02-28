@@ -12,9 +12,14 @@ namespace FileGrep
 {
     public partial class FormMain : Form
     {
+        private readonly GrepService _grepService = new();
+        private CancellationTokenSource? _cts;
+
         public FormMain()
         {
             InitializeComponent();
+            // キャンセルボタンは初期では無効化
+            buttonCancel.Enabled = false;
         }
 
         private void textBoxPath_DragDrop(object sender, DragEventArgs e)
@@ -49,29 +54,25 @@ namespace FileGrep
 
         private void buttonBrowseFolder_Click(object sender, EventArgs e)
         {
-            using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
+            using FolderBrowserDialog folderBrowserDialog = new();
+            folderBrowserDialog.Description = "フォルダーを選択";
+            if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                folderBrowserDialog.Description = "フォルダーを選択";
-                if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
-                {
-                    textBoxPath.Text = folderBrowserDialog.SelectedPath;
-                    CheckPath(folderBrowserDialog.SelectedPath);
-                }
+                textBoxPath.Text = folderBrowserDialog.SelectedPath;
+                CheckPath(folderBrowserDialog.SelectedPath);
             }
         }
 
         private void buttonBrowseFile_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            using OpenFileDialog openFileDialog = new();
+            openFileDialog.Title = "ファイルを選択";
+            openFileDialog.CheckFileExists = true;
+            openFileDialog.CheckPathExists = true;
+            if (openFileDialog.ShowDialog(this) == DialogResult.OK)
             {
-                openFileDialog.Title = "ファイルを選択";
-                openFileDialog.CheckFileExists = true;
-                openFileDialog.CheckPathExists = true;
-                if (openFileDialog.ShowDialog(this) == DialogResult.OK)
-                {
-                    textBoxPath.Text = openFileDialog.FileName;
-                    CheckPath(openFileDialog.FileName);
-                }
+                textBoxPath.Text = openFileDialog.FileName;
+                CheckPath(openFileDialog.FileName);
             }
         }
 
@@ -122,7 +123,7 @@ namespace FileGrep
             }
         }
 
-        private void buttonProcess_Click(object sender, EventArgs e)
+        private async void buttonProcess_Click(object sender, EventArgs e)
         {
             var filePath = textBoxPath.Text.Trim();
             if (string.IsNullOrWhiteSpace(filePath))
@@ -148,50 +149,60 @@ namespace FileGrep
 
             textBoxLog.Clear();
 
+            // 検索オプションを構築
+            var options = new SearchOptions
+            {
+                Extensions = extentions,
+                ExcludeFolders = excludeFolders,
+                Recursively = checkBoxRecursively.Checked,
+                SearchText = textBoxSearchText.Text,
+                Include = !checkBoxNotInclude.Checked,
+                AddPath = checkBoxAddPathName.Checked,
+                AddLineNo = checkBoxAddLineNo.Checked,
+                Comparison = checkBoxIgnoreCase.Checked ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal,
+                IgnoreEmptyLine = checkBoxIgnoreEmptyLine.Checked,
+                IgnoreSpaceLine = checkBoxIgnoreSpaceLine.Checked,
+            };
+
+            // UIをブロックしないよう非同期で実行
+            buttonProcess.Enabled = false;
+            buttonCancel.Enabled = true;
+            _cts = new System.Threading.CancellationTokenSource();
+            var progress = new Progress<string>(s => AppendLog(s));
+
             try
             {
-                bool include = !checkBoxNotInclude.Checked;
-                bool addPath = checkBoxAddPathName.Checked;
-                bool addLineNo = checkBoxAddLineNo.Checked;
-                StringComparison comparison = checkBoxIgnoreCase.Checked
-                    ? StringComparison.OrdinalIgnoreCase
-                    : StringComparison.Ordinal;
-
                 if (File.Exists(filePath))
                 {
-                    var log = GrepLogic.GrepFile(filePath,
-                        textBoxSearchText.Text,
-                        include,
-                        addPath,
-                        addLineNo,
-                        comparison,
-                        checkBoxIgnoreEmptyLine.Checked,
-                        checkBoxIgnoreSpaceLine.Checked);
+                    var log = await _grepService.GrepFileAsync(filePath, options, _cts.Token);
                     AppendLog(log);
                 }
                 else
                 {
-                    foreach (var log in GrepLogic.GrepFiles(
-                        filePath,
-                        extentions,
-                        excludeFolders,
-                        checkBoxRecursively.Checked,
-                        textBoxSearchText.Text,
-                        include,
-                        addPath,
-                        addLineNo,
-                        comparison,
-                        checkBoxIgnoreEmptyLine.Checked,
-                        checkBoxIgnoreSpaceLine.Checked))
-                    {
-                        AppendLog(log);
-                    }
+                    await _grepService.GrepFilesAsync(filePath, options, progress, _cts.Token);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                AppendLog("キャンセルされました。");
             }
             catch (Exception ex)
             {
                 AppendLog($"エラー: {ex}");
             }
+            finally
+            {
+                buttonProcess.Enabled = true;
+                try { buttonCancel.Enabled = false; } catch { }
+                _cts?.Dispose();
+                _cts = null;
+            }
+        }
+
+        private void buttonCancel_Click(object sender, EventArgs e)
+        {
+            _ = Task.Run(() => _cts?.Cancel());
+            buttonCancel.Enabled = false;
         }
     }
 }
