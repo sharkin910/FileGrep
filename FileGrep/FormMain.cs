@@ -47,6 +47,34 @@ namespace FileGrep
             }
         }
 
+        private void buttonBrowseFolder_Click(object sender, EventArgs e)
+        {
+            using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
+            {
+                folderBrowserDialog.Description = "フォルダーを選択";
+                if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
+                {
+                    textBoxPath.Text = folderBrowserDialog.SelectedPath;
+                    CheckPath(folderBrowserDialog.SelectedPath);
+                }
+            }
+        }
+
+        private void buttonBrowseFile_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Title = "ファイルを選択";
+                openFileDialog.CheckFileExists = true;
+                openFileDialog.CheckPathExists = true;
+                if (openFileDialog.ShowDialog(this) == DialogResult.OK)
+                {
+                    textBoxPath.Text = openFileDialog.FileName;
+                    CheckPath(openFileDialog.FileName);
+                }
+            }
+        }
+
         private bool CheckPath(string path)
         {
             if (File.Exists(path))
