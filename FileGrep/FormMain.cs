@@ -150,113 +150,48 @@ namespace FileGrep
 
             try
             {
+                bool include = !checkBoxNotInclude.Checked;
+                bool addPath = checkBoxAddPathName.Checked;
+                bool addLineNo = checkBoxAddLineNo.Checked;
+                StringComparison comparison = checkBoxIgnoreCase.Checked
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+
                 if (File.Exists(filePath))
                 {
-                    var log = GrepFile(filePath);
+                    var log = GrepLogic.GrepFile(filePath,
+                        textBoxSearchText.Text,
+                        include,
+                        addPath,
+                        addLineNo,
+                        comparison,
+                        checkBoxIgnoreEmptyLine.Checked,
+                        checkBoxIgnoreSpaceLine.Checked);
                     AppendLog(log);
                 }
                 else
                 {
-                    GrepFiles(filePath, extentions, excludeFolders);
+                    foreach (var log in GrepLogic.GrepFiles(
+                        filePath,
+                        extentions,
+                        excludeFolders,
+                        checkBoxRecursively.Checked,
+                        textBoxSearchText.Text,
+                        include,
+                        addPath,
+                        addLineNo,
+                        comparison,
+                        checkBoxIgnoreEmptyLine.Checked,
+                        checkBoxIgnoreSpaceLine.Checked))
+                    {
+                        AppendLog(log);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 AppendLog($"エラー: {ex}");
             }
-        }
-
-        private void GrepFiles(string path, string[] extentions, string[] excludeFolders)
-        {
-            var searchOpt = checkBoxRecursively.Checked ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-            foreach (var file in Directory.EnumerateFiles(path, "*.*", searchOpt))
-            {
-                if (IsMatchPath(file, extentions, excludeFolders))
-                {
-                    var log = GrepFile(file);
-                    if (log.Length > 0)
-                    {
-                        AppendLog(log);
-                    }
-                }
-            }
-        }
-
-        private bool IsMatchPath(string filePath, string[] extentions, string[] excludeFolders)
-        {
-            // 指定拡張子以外はスキップ
-            bool hit = false;
-            if (extentions.Length == 0)
-            {
-                // 対象となる拡張子が指定されていないときは全部が対象
-                hit = true;
-            }
-            else
-            {
-                foreach (var ext in extentions)
-                {
-                    if (filePath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hit = true;
-                        break;
-                    }
-                }
-            }
-            if (!hit) return false;
-
-            // 指定フォルダーが含まれていたらスキップ
-            foreach (var folder in excludeFolders)
-            {
-                if (filePath.Contains(folder, StringComparison.OrdinalIgnoreCase))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private string GrepFile(string filePath)
-        {
-            string lines = "";
-            string searchText = textBoxSearchText.Text;
-            bool include = !checkBoxNotInclude.Checked;
-            bool addPath = checkBoxAddPathName.Checked;
-            bool addLineNo = checkBoxAddLineNo.Checked;
-            StringComparison comparison = checkBoxIgnoreCase.Checked
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal;
-
-            int lineNo = 0;
-            foreach (string line in File.ReadLines(filePath))
-            {
-                lineNo++;
-                if (checkBoxIgnoreEmptyLine.Checked && string.IsNullOrEmpty(line)) continue;
-                if (checkBoxIgnoreSpaceLine.Checked && string.IsNullOrWhiteSpace(line)) continue;
-                if (line.Contains(searchText, comparison) == include)
-                {
-                    if (addPath)
-                    {
-                        if (addLineNo)
-                        {
-                            lines += $"\"{filePath}\"({lineNo}):";
-                        }
-                        else
-                        {
-                            lines += $"\"{filePath}\":";
-                        }
-                    }
-                    else
-                    {
-                        if (addLineNo)
-                        {
-                            lines += $"({lineNo}):";
-                        }
-                    }
-                    lines += line + Environment.NewLine;
-                }
-            }
-            return lines;
         }
     }
 }
