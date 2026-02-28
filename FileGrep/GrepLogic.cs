@@ -63,13 +63,6 @@ namespace FileGrep
         /// line number information.
         /// </summary>
         /// <param name="filePath">The path of the file to search.</param>
-        /// <param name="searchText">The text to search for in each line.</param>
-        /// <param name="include">true to include lines containing the search text; false to exclude them.</param>
-        /// <param name="addPath">true to include the file path in the output.</param>
-        /// <param name="addLineNo">true to include the line number in the output.</param>
-        /// <param name="comparison">The string comparison option to use when searching for text.</param>
-        /// <param name="ignoreEmptyLine">true to ignore empty lines.</param>
-        /// <param name="ignoreSpaceLine">true to ignore lines containing only whitespace.</param>
         /// <returns>A string containing the matching lines, optionally prefixed with file path and line number.</returns>
         private string GrepFileInternal(
             string filePath,
@@ -110,6 +103,14 @@ namespace FileGrep
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Asynchronously searches a file for lines matching the specified search options.
+        /// </summary>
+        /// <param name="filePath">The path to the file to search.</param>
+        /// <param name="options">The search options to apply.</param>
+        /// <param name="ct">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the matching lines as a single
+        /// string.</returns>
         public Task<string> GrepFileAsync(string filePath, SearchOptions options, CancellationToken ct)
         {
             return Task.Run(() => GrepFileInternal(filePath, options, ct), ct);
@@ -120,16 +121,9 @@ namespace FileGrep
         /// Searches files in a directory for lines matching the specified text and returns the results.
         /// </summary>
         /// <param name="path">The root directory to search.</param>
-        /// <param name="extentions">The file extensions to include in the search.</param>
-        /// <param name="excludeFolders">The folders to exclude from the search.</param>
-        /// <param name="recursively">true to search subdirectories; otherwise, false.</param>
-        /// <param name="searchText">The text to search for within files.</param>
-        /// <param name="include">true to include lines containing the search text; false to exclude them.</param>
-        /// <param name="addPath">true to include the file path in the result; otherwise, false.</param>
-        /// <param name="addLineNo">true to include line numbers in the result; otherwise, false.</param>
-        /// <param name="comparison">The string comparison option to use when searching.</param>
-        /// <param name="ignoreEmptyLine">true to ignore empty lines; otherwise, false.</param>
-        /// <param name="ignoreSpaceLine">true to ignore lines containing only whitespace; otherwise, false.</param>
+        /// <param name="options">The search options to apply.</param>
+        /// <param name="progress"></param>
+        /// <param name="ct">A cancellation token to cancel the operation.</param>
         /// <returns>An enumerable collection of strings containing the search results.</returns>
         public async Task GrepFilesAsync(
             string path,

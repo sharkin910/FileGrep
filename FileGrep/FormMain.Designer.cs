@@ -70,6 +70,7 @@
             textBoxPath.Name = "textBoxPath";
             textBoxPath.Size = new Size(564, 23);
             textBoxPath.TabIndex = 1;
+            textBoxPath.TextChanged += textBoxPath_TextChanged;
             textBoxPath.DragDrop += textBoxPath_DragDrop;
             textBoxPath.DragEnter += textBoxPath_DragEnter;
             // 

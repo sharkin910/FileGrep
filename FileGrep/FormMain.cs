@@ -15,11 +15,17 @@ namespace FileGrep
         private readonly GrepService _grepService = new();
         private CancellationTokenSource? _cts;
 
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
         public FormMain()
         {
             InitializeComponent();
             // キャンセルボタンは初期では無効化
             buttonCancel.Enabled = false;
+            // イベント登録
+            this.Load += FormMain_Load;
+            this.FormClosing += FormMain_FormClosing;
         }
 
         private void textBoxPath_DragDrop(object sender, DragEventArgs e)
@@ -76,6 +82,11 @@ namespace FileGrep
             }
         }
 
+        /// <summary>
+        /// Enables or disables UI controls based on whether the specified path exists as a file or directory.
+        /// </summary>
+        /// <param name="path">The file or directory path to check.</param>
+        /// <returns>true if the path exists as a file or directory; otherwise, false.</returns>
         private bool CheckPath(string path)
         {
             if (File.Exists(path))
@@ -102,6 +113,10 @@ namespace FileGrep
             return false;
         }
 
+        /// <summary>
+        /// Appends a log message to the log text box, ensuring thread safety and automatic scrolling.
+        /// </summary>
+        /// <param name="message">The log message to append.</param>
         private void AppendLog(string message)
         {
             if (textBoxLog.InvokeRequired)
@@ -203,6 +218,56 @@ namespace FileGrep
         {
             _ = Task.Run(() => _cts?.Cancel());
             buttonCancel.Enabled = false;
+        }
+
+        private void FormMain_Load(object? sender, EventArgs e)
+        {
+            var settings = AppSettings.Load();
+            if (settings.WindowSize.Width > 0 && settings.WindowSize.Height > 0)
+            {
+                this.Size = settings.WindowSize;
+            }
+            if (settings.WindowLocation != Point.Empty)
+            {
+                this.Location = settings.WindowLocation;
+            }
+            textBoxPath.Text = settings.PathText;
+            textBoxExtention.Text = settings.Extensions;
+            textBoxExcludeFolders.Text = settings.ExcludeFolders;
+            checkBoxRecursively.Checked = settings.Recursively;
+            textBoxSearchText.Text = settings.SearchText;
+            checkBoxNotInclude.Checked = settings.NotInclude;
+            checkBoxIgnoreCase.Checked = settings.IgnoreCase;
+            checkBoxIgnoreEmptyLine.Checked = settings.IgnoreEmptyLine;
+            checkBoxIgnoreSpaceLine.Checked = settings.IgnoreSpaceLine;
+            checkBoxAddPathName.Checked = settings.AddPathName;
+            checkBoxAddLineNo.Checked = settings.AddLineNo;
+        }
+
+        private void FormMain_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            var settings = new AppSettings
+            {
+                WindowSize = this.Size,
+                WindowLocation = this.Location,
+                PathText = textBoxPath.Text,
+                Extensions = textBoxExtention.Text,
+                ExcludeFolders = textBoxExcludeFolders.Text,
+                Recursively = checkBoxRecursively.Checked,
+                SearchText = textBoxSearchText.Text,
+                NotInclude = checkBoxNotInclude.Checked,
+                IgnoreCase = checkBoxIgnoreCase.Checked,
+                IgnoreEmptyLine = checkBoxIgnoreEmptyLine.Checked,
+                IgnoreSpaceLine = checkBoxIgnoreSpaceLine.Checked,
+                AddPathName = checkBoxAddPathName.Checked,
+                AddLineNo = checkBoxAddLineNo.Checked,
+            };
+            settings.Save();
+        }
+
+        private void textBoxPath_TextChanged(object sender, EventArgs e)
+        {
+            CheckPath(textBoxPath.Text);
         }
     }
 }
