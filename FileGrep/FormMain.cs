@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using System.Data;
 
 namespace FileGrep
 {
@@ -153,11 +145,11 @@ namespace FileGrep
             }
 
             var extention = textBoxExtention.Text.Trim();
-            var extentions = extention.Split(";", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            var extentions = extention.Split(AppSettings.SettingItemDelimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(x => x.StartsWith('.') ? x : "." + x)
                 .ToArray();
 
-            var excludeFolders = textBoxExcludeFolders.Text.Split(";", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            var excludeFolders = textBoxExcludeFolders.Text.Split(AppSettings.SettingItemDelimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(x => x.StartsWith('\\') ? x : "\\" + x)
                 .Select(x => x.EndsWith('\\') ? x : x + "\\")
                 .ToArray();

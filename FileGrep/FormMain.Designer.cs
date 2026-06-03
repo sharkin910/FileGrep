@@ -206,7 +206,7 @@
             textBoxExtention.Name = "textBoxExtention";
             textBoxExtention.Size = new Size(110, 23);
             textBoxExtention.TabIndex = 13;
-            textBoxExtention.Text = "cs;tt";
+            textBoxExtention.Text = "";
             // 
             // checkBoxRecursively
             // 
@@ -236,7 +236,7 @@
             textBoxExcludeFolders.Name = "textBoxExcludeFolders";
             textBoxExcludeFolders.Size = new Size(415, 23);
             textBoxExcludeFolders.TabIndex = 16;
-            textBoxExcludeFolders.Text = "obj;bin;log;bak";
+            textBoxExcludeFolders.Text = "";
             // 
             // checkBoxAddPathName
             // 

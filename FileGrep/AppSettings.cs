@@ -1,16 +1,15 @@
-using System;
-using System.Drawing;
 using System.Text.Json;
 
 namespace FileGrep
 {
     public class AppSettings
     {
+        public static string SettingItemDelimiter { get; } = "|";
         public Size WindowSize { get; set; }
         public Point WindowLocation { get; set; }
         public string PathText { get; set; } = string.Empty;
-        public string Extensions { get; set; } = "cs;tt";
-        public string ExcludeFolders { get; set; } = "obj;bin;log;bak";
+        public string Extensions { get; set; } = "cs|tt";
+        public string ExcludeFolders { get; set; } = "obj|bin|log|bak";
         public bool Recursively { get; set; } = true;
         public string SearchText { get; set; } = string.Empty;
         public bool NotInclude { get; set; }
@@ -23,10 +22,12 @@ namespace FileGrep
         public static string GetSettingsFilePath()
         {
             string folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            folder = System.IO.Path.Combine(folder, "FileGrep");
-            if (!System.IO.Directory.Exists(folder))
-                System.IO.Directory.CreateDirectory(folder);
-            return System.IO.Path.Combine(folder, "settings.json");
+            folder = Path.Combine(folder, "FileGrep");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            return Path.Combine(folder, "settings.json");
         }
 
         public static AppSettings Load()
@@ -34,10 +35,16 @@ namespace FileGrep
             try
             {
                 var path = GetSettingsFilePath();
-                if (System.IO.File.Exists(path))
+                if (File.Exists(path))
                 {
-                    string json = System.IO.File.ReadAllText(path);
-                    return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    string json = File.ReadAllText(path);
+                    var setting = JsonSerializer.Deserialize<AppSettings>(json);
+                    if (setting is not null)
+                    {
+                        setting.Extensions = setting.Extensions.Replace(";", SettingItemDelimiter);
+                        setting.ExcludeFolders = setting.ExcludeFolders.Replace(";", SettingItemDelimiter);
+                        return setting;
+                    }
                 }
             }
             catch
@@ -53,7 +60,7 @@ namespace FileGrep
             {
                 var path = GetSettingsFilePath();
                 string json = JsonSerializer.Serialize(this);
-                System.IO.File.WriteAllText(path, json);
+                File.WriteAllText(path, json);
             }
             catch
             {
